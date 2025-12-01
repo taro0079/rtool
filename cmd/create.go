@@ -72,7 +72,7 @@ var requestModelCmd = &cobra.Command{
 			"Name":      ro.Name,
 			"Mode":      ro.Mode,
 		}
-		t, err := template.New("requestModel.tmpl").ParseFiles("./cmd//templates/requestModel.tmpl")
+		t, err := template.New("requestModel.tmpl").ParseFiles("./cmd/templates/requestModel.tmpl")
 
 		if err != nil {
 			return fmt.Errorf("テンプレートファイルの読み込みでエラーが発生しました: %w", err)
@@ -95,12 +95,49 @@ var requestModelCmd = &cobra.Command{
 
 		}
 
-		if err = t.Execute(writer, data); err != nil {
+		if err := t.Execute(writer, data); err != nil {
 			return fmt.Errorf("テンプレートアサインでエラーが発生しました: %w", err)
 		}
 
+		if ro.WithFactory {
+			if err := createFactory(ro.Stdout, ro.Name, data); err != nil {
+				return err
+			}
+		}
+
 		return nil
+
 	},
+}
+
+func createFactory(stdOut bool, name string, d map[string]string) error {
+	t, err := template.New("requestModelFactory.tmpl").ParseFiles("./cmd/templates/requestModelFactory.tmpl")
+
+	if err != nil {
+		return fmt.Errorf("テンプレートファイルの読み込みでエラーが発生しました: %w", err)
+	}
+
+	var writer io.Writer
+	if stdOut {
+		writer = os.Stdout
+	} else {
+		filename := fmt.Sprintf("%sFactory.php", name)
+		f, err := os.Create(filename)
+		if err != nil {
+			return fmt.Errorf("ファイル作成でエラーが発生しました: %w", err)
+		}
+
+		defer f.Close()
+		writer = f
+		fmt.Printf("ファイルを生成しました: %s\n", filename)
+	}
+
+	if err := t.Execute(writer, d); err != nil {
+		return fmt.Errorf("テンプレートアサインでエラーが発生しました: %w", err)
+	}
+
+	return nil
+
 }
 
 func init() {
