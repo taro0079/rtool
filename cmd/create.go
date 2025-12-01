@@ -16,6 +16,7 @@ type Options struct {
 	TicketNumber string
 	When         string
 	Explanation  string
+	Filepath     string
 }
 
 var (
@@ -28,15 +29,19 @@ var createCmd = &cobra.Command{
 	Long: `リピストのddlファイル作成ルールに基づいて空のddlファイルを作成します。
 		ticket_number, とwhenをオプションとして与えてください。
 		`,
-	Run: func(cmd *cobra.Command, args []string) {
-		filename := fmt.Sprintf("%s_%s_%s_%s_%s.sql", time.Now().Format("20060102"), o.SortNumber, o.TicketNumber, o.When, o.Explanation)
-		_, err := os.Create(filename)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		filename := fmt.Sprintf("%s/%s_%s_%s_%s_%s.sql", o.Filepath, time.Now().Format("20060102"), o.SortNumber, o.TicketNumber, o.When, o.Explanation)
+		file, err := os.Create(filename)
 
 		if err != nil {
-			fmt.Println("書き込みエラー:", err)
+			return fmt.Errorf("書き込みエラー: %w", err)
 		}
 
+		defer file.Close()
+
 		fmt.Println("ファイルが作成されました: ", filename)
+
+		return nil
 	},
 }
 
@@ -46,6 +51,7 @@ func init() {
 	createCmd.Flags().StringVarP(&o.TicketNumber, "ticket_number", "t", "", "redmineのチケット番号です")
 	createCmd.Flags().StringVarP(&o.When, "when", "w", "", "いつにsqlを実行するかを指定します")
 	createCmd.Flags().StringVarP(&o.Explanation, "explanation", "e", "", "sqlの内容の簡単な説明。小文字英数字とアンダースコアのみ。create, update, dropといったsqlの操作とテーブル名を連結する形")
+	createCmd.Flags().StringVarP(&o.Filepath, "file_path", "f", ".", "sqlファイルを出力するファイルパス")
 	createCmd.MarkFlagRequired("ticket_number")
 	createCmd.MarkFlagRequired("when")
 	createCmd.MarkFlagRequired("explanation")
