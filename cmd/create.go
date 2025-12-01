@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -30,9 +31,14 @@ var createCmd = &cobra.Command{
 		ticket_number, とwhenをオプションとして与えてください。
 		`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		filename := fmt.Sprintf("%s/%s_%s_%s_%s_%s.sql", o.Filepath, time.Now().Format("20060102"), o.SortNumber, o.TicketNumber, o.When, o.Explanation)
-		file, err := os.Create(filename)
+		filename := fmt.Sprintf("%s_%s_%s_%s_%s.sql", time.Now().Format("20060102"), o.SortNumber, o.TicketNumber, o.When, o.Explanation)
+		fullPath := filepath.Join(o.Filepath, filename)
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("ディレクトリ作成エラー: %w", err)
+		}
 
+		file, err := os.Create(filename)
 		if err != nil {
 			return fmt.Errorf("書き込みエラー: %w", err)
 		}
