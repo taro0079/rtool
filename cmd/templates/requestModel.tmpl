@@ -1,0 +1,42 @@
+<?php
+/**
+ *     ____                        __     _____ __
+ *    / __ \___  ____  ___  ____ _/ /_   / ___// /_____  ________
+ *   / /_/ / _ \/ __ \/ _ \/ __ `/ __/   \__ \/ __/ __ \/ ___/ _ \
+ *  / _, _/  __/ /_/ /  __/ /_/ / /_    ___/ / /_/ /_/ / /  /  __/
+ * /_/ |_|\___/ .___/\___/\__,_/\__/   /____/\__/\____/_/   \___/
+ *           /_/
+ *
+ * Repeat Store: Online shopping cart system for "Subscription and Distribution group"
+ *
+ * @category    application
+ * @package     rpst
+ */
+
+namespace App\model\requests\rpst\{{.Namespace}};
+
+use App\model\requests\rpst\admin\traits\csrf\AdminOnetimeCsrfTokenTrait;
+use App\model\requests\rpst\traits\legacy_rpst_web\LegacyRpstWebRequestModelInterface;
+use App\model\requests\rpst\traits\legacy_rpst_web\LegacyRpstWebRequestModelTrait;
+use App\validator\Validator;
+
+class {{.Name}} implements LegacyRpstWebRequestModelInterface
+{
+    use AdminOnetimeCsrfTokenTrait;
+    use LegacyRpstWebRequestModelTrait;
+
+    /**
+     * @var string  リクエストモード
+     */
+    const MODE  = '{{.Mode}}';
+
+    /**
+     * データ用の検証設定を返します。
+     *
+     * @return  array   検証設定
+     */
+    protected function getValidationRuleForData()
+    {
+		return [];
+    }
+}

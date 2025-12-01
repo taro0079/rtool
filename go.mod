@@ -1,4 +1,4 @@
-module github.com/taro0079/sql_creator
+module github.com/taro0079/rtool
 
 go 1.23.4
 
