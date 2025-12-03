@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"embed"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 )
+
+//go:embed templates/*.tmpl
+var templateFS embed.FS
 
 type Options struct {
 	SortNumber   string
@@ -72,7 +76,7 @@ var requestModelCmd = &cobra.Command{
 			"Name":      ro.Name,
 			"Mode":      ro.Mode,
 		}
-		t, err := template.New("requestModel.tmpl").ParseFiles("./cmd/templates/requestModel.tmpl")
+		t, err := template.ParseFS(templateFS, "templates/requestModel.tmpl")
 
 		if err != nil {
 			return fmt.Errorf("テンプレートファイルの読み込みでエラーが発生しました: %w", err)
@@ -111,7 +115,7 @@ var requestModelCmd = &cobra.Command{
 }
 
 func createFactory(stdOut bool, name string, d map[string]string) error {
-	t, err := template.New("requestModelFactory.tmpl").ParseFiles("./cmd/templates/requestModelFactory.tmpl")
+	t, err := template.ParseFS(templateFS, "templates/requestModelFactory.tmpl")
 
 	if err != nil {
 		return fmt.Errorf("テンプレートファイルの読み込みでエラーが発生しました: %w", err)
