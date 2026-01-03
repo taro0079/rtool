@@ -31,9 +31,17 @@ type RequestModelOptions struct {
 	Stdout      bool
 }
 
+type LcpageOption struct {
+	Name      string
+	Namespace string
+	Stdout    bool
+	PageType  string
+}
+
 var (
 	o  = &Options{}
 	ro = &RequestModelOptions{}
+	lo = &LcpageOption{}
 )
 var createCmd = &cobra.Command{
 	Use:   "create",
@@ -62,6 +70,63 @@ var createDdlCmd = &cobra.Command{
 		defer file.Close()
 
 		fmt.Println("ファイルが作成されました: ", filename)
+
+		return nil
+	},
+}
+var requestModelBasedLcPageCmd = &cobra.Command{
+	Use:   "LcPage",
+	Short: "LCページのテンプレートを作成します",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		var pageTypeInName string
+		var pageTypeInNampespace string
+
+		if lo.PageType == "admin" {
+			pageTypeInName = "_Admin"
+		} else if lo.PageType == "front" {
+			pageTypeInName = ""
+		}
+
+		if lo.PageType == "admin" {
+			pageTypeInNampespace = "admin"
+		} else if lo.PageType == "front" {
+			pageTypeInNampespace = "front"
+		}
+
+		data := map[string]string{
+			"Namespace":           lo.Namespace,
+			"Name":                lo.Name,
+			"PageType":            lo.PageType,
+			"PageTypeInName":      pageTypeInName,
+			"PageTypeInNamespace": pageTypeInNampespace,
+		}
+
+		t, err := template.ParseFS(templateFS, "templates/lcPage.tmpl")
+
+		if err != nil {
+			return fmt.Errorf("テンプレートファイルの読み込みでエラーが発生しました: %w", err)
+		}
+
+		var writer io.Writer
+
+		if ro.Stdout {
+			writer = os.Stdout
+		} else {
+			filename := fmt.Sprintf("%s.php", lo.Name)
+			f, err := os.Create(filename)
+			if err != nil {
+				return fmt.Errorf("ファイル作成でエラーが発生しました: %w", err)
+			}
+
+			defer f.Close()
+			writer = f
+			fmt.Printf("ファイルを生成しました: %s\n", filename)
+
+		}
+
+		if err := t.Execute(writer, data); err != nil {
+			return fmt.Errorf("テンプレートアサインでエラーが発生しました: %w", err)
+		}
 
 		return nil
 	},
@@ -148,6 +213,7 @@ func init() {
 	rootCmd.AddCommand(createCmd)
 	createCmd.AddCommand(createDdlCmd)
 	createCmd.AddCommand(requestModelCmd)
+	createCmd.AddCommand(requestModelBasedLcPageCmd)
 	createDdlCmd.Flags().StringVarP(&o.SortNumber, "sort_number", "s", "0000", "複数のsqlファイルがあり、適用順序に制約がある場合に指定する。数値の小さい順番にsqlが実行される。")
 	createDdlCmd.Flags().StringVarP(&o.TicketNumber, "ticket_number", "t", "", "redmineのチケット番号です")
 	createDdlCmd.Flags().StringVarP(&o.When, "when", "w", "", "いつにsqlを実行するかを指定します")
@@ -164,4 +230,12 @@ func init() {
 	requestModelCmd.MarkFlagRequired("namespace")
 	requestModelCmd.Flags().BoolVarP(&ro.WithFactory, "with-factory", "f", false, "リクエストモデルファクトリも同時に作成するか")
 	requestModelCmd.Flags().BoolVar(&ro.Stdout, "stdout", false, "ファイル作成ではなく標準出力する")
+
+	requestModelBasedLcPageCmd.Flags().StringVarP(&lo.Name, "name", "n", "", "LcPageの名前")
+	requestModelBasedLcPageCmd.MarkFlagRequired("name")
+	requestModelBasedLcPageCmd.Flags().StringVarP(&lo.Namespace, "namespace", "a", "", "LcPageの名前空間")
+	requestModelBasedLcPageCmd.MarkFlagRequired("namespace")
+	requestModelBasedLcPageCmd.Flags().StringVarP(&lo.PageType, "pagetype", "p", "", "LcPageがフロント用: front, 管理画面用: admin のどちらかを指定")
+	requestModelBasedLcPageCmd.MarkFlagRequired("pagetype")
+	requestModelBasedLcPageCmd.Flags().BoolVar(&lo.Stdout, "stdout", false, "ファイル作成ではなく標準出力する")
 }
